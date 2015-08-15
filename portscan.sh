@@ -8,7 +8,7 @@ showHelp()
 cat <<EOF
 usage: $0 [-s server] [-h] [-v] <-p port>
 	-s server
-	-p port,80 or 1000-2000 (from 1000 to 2000)
+	-p port,80 or 1000-2000(from 1000 to 2000) or 22,80(scan 22 and 80)
 	-h display this help and exit
 EOF
 exit 1
