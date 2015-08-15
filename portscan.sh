@@ -1,6 +1,7 @@
 #!/bin/bash
 declare -f showHelp
 declare -f parse
+declare -a ports
 
 showHelp()
 {
@@ -64,48 +65,53 @@ checkArgs()
 	do
 		read -p "Please type port: " port
 	done	
+
 	split=(${port//-/ }) # 字符串替换，把-替换成空格，结果成为数组的值
 	if [[ ${#split[@]} -ge 2 ]]
 	then
 		from=${split[0]}
 		to=${split[1]}
-	else
-		from=${split[0]}
-		to=${split[0]}
+		ports=()
+		return 0
 	fi
-	if ! isDigit $from
-	then
-		echo ERROR: $from is not a valid port!
-		exit 1
-	fi
-	if ! isDigit $to
-	then
-		echo ERROR: $to is not a valid port!
-		exit 1
-	fi
+	ports=(${port//,/ }) # 字符串替换，把-替换成空格，结果成为数组的值
 }
 
 scan()
 {
-	if [[ $# -lt 2 ]]
-	then
-		showHelp
-	fi
 	if [[ $# -ge 3 ]]
 	then
-		local -r server=$1
-		local -r from=$2
-		local -r to=$3
-	else
-		local -r server=$1
-		local -r from=$2
-		local -r to=$from
+		s=$1
+		f=$2
+		t=$3
+
+		nc -w 1 -zv $s $f-$t 2>&1 \
+			| grep -v -i "Connection refused" \
+			| awk -F' ' '{printf("%-15s\t%-5d\t%-15s\n", $3,$4,$6)}'
+	elif [[ $# -ge 2 ]]
+	then
+		s=$1
+		p=$2
+		nc -w 1 -zv $s $p 2>&1 \
+			| grep -v -i "Connection refused" \
+			| awk -F' ' '{printf("%-15s\t%-5d\t%-15s\n", $3,$4,$6)}'
 	fi
-	nc -zv $server $from-$to 2>&1 \
-	       	| grep -v -i "Connection refused" \
-	       	| awk -F' ' 'BEGIN{printf("%-15s\t%-5s\t%-15s\n", "Server","Port","Protocol");}{printf("%-15s\t%-5d\t%-15s\n", $3,$4,$6)}'
 }
 
-parse $@
-checkArgs $@
-time scan $server $from $to
+main()
+{
+	parse $@
+	checkArgs $@
+	printf "%-15s\t%-5s\t%-15s\n" "Server" "Port" "Protocol"
+	if [[ ${#ports[@]} -gt 0 ]]
+	then
+		for i in ${ports[@]}
+		do
+			scan $server $i
+		done
+	else
+		scan $server $from $to
+	fi
+}
+
+time main $@
