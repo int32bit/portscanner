@@ -2,6 +2,10 @@
 declare -f showHelp
 declare -f parse
 declare -a ports
+declare -a isDigit
+declare -a checkArgs
+declare -a scan
+declare -a main
 
 showHelp()
 {
@@ -14,7 +18,7 @@ EOF
 exit 1
 }
 
-# 解析参数
+# parse commandline arguments
 parse()
 {
 	verbose=false
@@ -55,7 +59,6 @@ isDigit()
 
 checkArgs()
 {
-	# 检查参数是否成功输入
 	if [[ -z "$server" ]]
 	then
 		server=localhost
@@ -66,7 +69,7 @@ checkArgs()
 		read -p "Please type port: " port
 	done	
 
-	split=(${port//-/ }) # 字符串替换，把-替换成空格，结果成为数组的值
+	split=(${port//-/ }) # split by char '-', return an array.
 	if [[ ${#split[@]} -ge 2 ]]
 	then
 		from=${split[0]}
@@ -74,7 +77,7 @@ checkArgs()
 		ports=()
 		return 0
 	fi
-	ports=(${port//,/ }) # 字符串替换，把-替换成空格，结果成为数组的值
+	ports=(${port//,/ }) # split by char ',', return an array.
 }
 
 scan()
@@ -107,11 +110,11 @@ main()
 	then
 		for i in ${ports[@]}
 		do
-			scan $server $i
+			scan $server $i # I want to use sub-shell, but lead to spend more time
 		done
 	else
 		scan $server $from $to
 	fi
 }
 
-time main $@
+main $@
